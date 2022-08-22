@@ -10,7 +10,7 @@ HISAT2, StringTie
 frederic.choulet@inrae.fr, pauline.lasserre-zuber@inrae.fr, helene.rimbert@inrae.fr  
 
 ## Roadmap  
-Introgressions studies  
+Alternative transcipts annotation: in progress, contact helene.rimbert@inrae.fr  
 
 ## Authors and acknowledgment  
 Pauline LASSERRE-ZUBER (INRAe), Frederic CHOULET (INRAe), Hélène RIMBERT (INRAe)
