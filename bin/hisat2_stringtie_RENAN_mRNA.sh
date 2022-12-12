@@ -2,7 +2,7 @@
 #SBATCH --job-name=hst2Re
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
-#SBATCH -p fast
+#SBATCH -p gdec
 #SBATCH --cpus-per-task=16
 #SBATCH --array=0-27
 
@@ -45,22 +45,22 @@ echo '***************** hisat2 alignment of sample' ${SHORTNAME}' **************
 hisat2 -p 16 -x ${DATABANK} -1 ${FILE[0]} -2 ${FILE[1]} |samtools sort -@ 16 --output-fmt BAM -o ${SHORTNAME}_sorted.bam -
 
 ######### Make bam file index #######################################
-samtools index -c -@ 16 ${SHORTNAME}_sorted.bam
+samtools index -c -@ ${SLURM_CPUS_PER_TASK} ${SHORTNAME}_sorted.bam
 
 #######################################
 ##### Filter bam file   ###############
 #######################################
-samtools view -@16 -F2308 -b -q60 ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_q60.bam
+samtools view -@ ${SLURM_CPUS_PER_TASK} -F2308 -b -q60 ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_q60.bam
 
 #############################################################
 ##### samtool flagstat for RAWreads #########################
 #############################################################
-samtools flagstat -@16 ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_stats.txt
+samtools flagstat -@ ${SLURM_CPUS_PER_TASK} ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_stats.txt
 
 ###########################################
 ##### samtool Flagstat mapQ 60  ###########
 ###########################################
-samtools flagstat -@16 ${SHORTNAME}_sorted_q60.bam > ${SHORTNAME}_sorted_q60_stats.txt
+samtools flagstat -@ ${SLURM_CPUS_PER_TASK} ${SHORTNAME}_sorted_q60.bam > ${SHORTNAME}_sorted_q60_stats.txt
 
 echo 'hisat2 alignment - job finished at: '`date`
 
@@ -70,7 +70,7 @@ echo 'hisat2 alignment - job finished at: '`date`
 echo '***************** stringtie treatment of sample ' ${SHORTNAME}' *****************'
 ##option -p (threading) fait que le gtf n'est pas trie
 ##option -c 4 coverage 4 min per base pour considerer la presence d'un transcrit
-stringtie -p 16 -c 4 ${SHORTNAME}_sorted_q60.bam -o ${SHORTNAME}_q60.gtf
+stringtie -p ${SLURM_CPUS_PER_TASK} -c 4 ${SHORTNAME}_sorted_q60.bam -o ${SHORTNAME}_q60.gtf
 
 echo 'stringTie assembly - Job finished at: '`date`
 ##############################################################################################################################################
