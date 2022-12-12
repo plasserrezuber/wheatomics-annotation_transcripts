@@ -6,39 +6,35 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --array=0-27
 
-##################################################################################
-#### From P. Leroy - Wed Apr 28 09:58:55 2021
-##################################################################################
-DATA_DIR='/storage/groups/gdec/shared/triticum_aestivum/wheatomics/rnaseq/renan'
-DATABANK='/storage/groups/gdec/shared/triticum_aestivum/wheatomics/renan/assembly/pseudo_v2/TaeRenan_refseq_v2.0.hisat2idx'
-OUTPUT='/home/palasser/results/hisat2/TaeRenan_v2.0_mRNA'
+### modules management 
+module load HISAT2/2.0.5 gcc/8.1.0 samtools/1.9 stringtie/2.0.3
 
-echo '******************************************'
-echo 'Mapping on reference genome with Hisat2'
-echo '******************************************'
 ### errors management
 ### set -x #mode debug on
 set -o errexit #pour que le script s'arrete en cas d erreur ignoree
 set -o nounset #force l initialisation des variables
 IFS=$'\n\t'
 
-### modules management 
-module load HISAT2/2.0.5 gcc/8.1.0 samtools/1.9 stringtie/2.0.3
+##################################################################################
+#set up directories
+DATA_DIR='/storage/groups/gdec/shared/triticum_aestivum/wheatomics/rnaseq/renan'
+DATABANK='/storage/groups/gdec/shared/triticum_aestivum/wheatomics/renan/assembly/pseudo_v2/TaeRenan_refseq_v2.0.hisat2idx'
+OUTPUT='/home/palasser/results/hisat2/TaeRenan_v2.0_mRNA'
 
-echo 'Set up directories'
 ### working directory analysis in scratch
 SCRATCHDIR=/storage/scratch/$USER/${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}
 mkdir -p -m 700 ${SCRATCHDIR}
 cd ${SCRATCHDIR}
 mkdir -p ${OUTPUT}
 
+##################################################################################
 ### Folder name contening the Renan mRNA .gz files : 28 samples : 16 grain / 2 root / 6 leaves / 4 steam
 SAMPLES=(AACL AACM AACN AACO AACP AACQ AACR AACS AACT AACU AACV AACW AADE AADF AADU AADV AAHD AAHE AAHN AAHO AAIH AAII AAJB AAJC AAIR AAIS AAHX AAHY)
 
-########################################################################################################
 sample=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
 FILE=($(\ls -1 $DATA_DIR"/"$sample"/RunsSolexa/"*_JARVIS_*/*".fastq.gz"))
 SHORTNAME=$(basename ${FILE[0]} |cut -d'_' -f1-3,5)
+########################################################################################################
 
 echo '*****************************************************************************'
 echo "start job  ${SLURM_JOBID} on ${HOSTNAME} at `date`"
@@ -59,14 +55,12 @@ samtools view -@16 -F2308 -b -q60 ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_
 #############################################################
 ##### samtool flagstat for RAWreads #########################
 #############################################################
-RAWSTATS=${SHORTNAME}_sorted_stats.txt
-samtools flagstat -@16 ${SHORTNAME}_sorted.bam > ${RAWSTATS}
+samtools flagstat -@16 ${SHORTNAME}_sorted.bam > ${SHORTNAME}_sorted_stats.txt
 
 ###########################################
 ##### samtool Flagstat mapQ 60  ###########
 ###########################################
-FILTERSTATS=${SHORTNAME}_sorted_q60_stats.txt
-samtools flagstat -@16 ${SHORTNAME}_sorted_q60.bam > ${FILTERSTATS}
+samtools flagstat -@16 ${SHORTNAME}_sorted_q60.bam > ${SHORTNAME}_sorted_q60_stats.txt
 
 echo 'hisat2 alignment - job finished at: '`date`
 
@@ -81,11 +75,7 @@ stringtie -p 16 -c 4 ${SHORTNAME}_sorted_q60.bam -o ${SHORTNAME}_q60.gtf
 echo 'stringTie assembly - Job finished at: '`date`
 ##############################################################################################################################################
 ### move output data
-mv ${SCRATCHDIR}/${RAWSTATS} ${OUTPUT}/
-mv ${SCRATCHDIR}/${FILTERSTATS} ${OUTPUT}/
-mv ${SCRATCHDIR}/${SHORTNAME}_sorted.bam ${OUTPUT}/
-mv ${SCRATCHDIR}/${SHORTNAME}_sorted_q60.bam ${OUTPUT}/
-mv ${SCRATCHDIR}/${SHORTNAME}_q60.gtf ${OUTPUT}/ && rm -Rf ${SCRATCHDIR}
+mv ${SCRATCHDIR}/${SHORTNAME}* ${OUTPUT}/ && rm -Rf ${SCRATCHDIR}
 
 
 #######################################
